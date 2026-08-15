@@ -5,6 +5,7 @@ Pacote Calculadora de Estruturas de Dados e Análise de Algoritmos.
 from typing import List, Optional, Union
 from dataclasses import dataclass
 from datetime import datetime
+import os
 
 from .stack import Stack
 from .queue_ds import Queue
@@ -37,6 +38,7 @@ class CalculatorEngine:
         self.evaluator = PostfixEvaluator()
         self.max_history = max_history
         self._history: List[CalculationResult] = []
+        self._last_result: Optional[Union[int, float]] = None
 
     def calculate(self, expression_str: str) -> CalculationResult:
         """
@@ -50,8 +52,9 @@ class CalculatorEngine:
         """
         now = datetime.now()
         try:
-            # 1. Tokenização / Análise Léxica e Sintática
-            tokenizer = self.tokenizer_cls(expression_str)
+            # 1. Tokenização / Análise Léxica e Sintática (com suporte a 'ans')
+            ans_val = float(self._last_result) if self._last_result is not None else None
+            tokenizer = self.tokenizer_cls(expression_str, ans_value=ans_val)
             tokens = tokenizer.tokenize()
 
             # 2. Conversão Infixa -> Pós-Fixa (Shunting Yard)
@@ -78,6 +81,7 @@ class CalculatorEngine:
                 error=None
             )
 
+            self._last_result = result_val
             self._add_to_history(calc_result)
             return calc_result
 
@@ -117,6 +121,53 @@ class CalculatorEngine:
     def clear_history(self) -> None:
         """Limpa o histórico de operações."""
         self._history.clear()
+
+    @property
+    def last_result(self) -> Optional[Union[int, float]]:
+        """Retorna o último resultado calculado com sucesso (para uso com 'ans')."""
+        return self._last_result
+
+    def export_history(self, filepath: str) -> str:
+        """
+        Exporta o histórico de operações para um arquivo de texto legível.
+        
+        Args:
+            filepath: Caminho do arquivo de saída.
+            
+        Returns:
+            Caminho absoluto do arquivo gerado.
+        """
+        lines = []
+        lines.append("=" * 70)
+        lines.append("  HISTORICO DE OPERACOES — Calculadora de Estruturas de Dados")
+        lines.append(f"  Exportado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        lines.append("=" * 70)
+        lines.append("")
+
+        if not self._history:
+            lines.append("  (Historico vazio)")
+        else:
+            for i, item in enumerate(self._history, 1):
+                time_str = item.timestamp.strftime("%H:%M:%S")
+                lines.append(f"  [{i:02d}] {time_str} | {item.expression}")
+                if item.error:
+                    lines.append(f"       ERRO: {item.error}")
+                else:
+                    lines.append(f"       RPN:       {item.postfix_expression}")
+                    lines.append(f"       Resultado: {item.result}")
+                    if item.complexity:
+                        lines.append(f"       Tokens: {item.complexity.total_tokens} | "
+                                     f"Operandos: {item.complexity.num_operands} | "
+                                     f"Operadores: {item.complexity.num_operators}")
+                lines.append("")
+
+        lines.append("=" * 70)
+
+        abs_path = os.path.abspath(filepath)
+        with open(abs_path, 'w', encoding='utf-8') as f:
+            f.write("\n".join(lines))
+
+        return abs_path
 
 
 __all__ = [

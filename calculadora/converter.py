@@ -77,7 +77,11 @@ class InfixToPostfixConverter:
             if token.type == TokenType.NUMBER:
                 self.output_queue.enqueue(token)
 
-            # 2. Se for um operador (binário ou unário)
+            # 2. Se for uma função (sin, cos, sqrt, etc.), empilha na pilha de operadores
+            elif token.type == TokenType.FUNCTION:
+                self.operator_stack.push(token)
+
+            # 3. Se for um operador (binário ou unário)
             elif token.type in (TokenType.OPERATOR, TokenType.UNARY_MINUS):
                 o1_info = self.OPERATORS_CONFIG.get(token.value)
                 if not o1_info:
@@ -108,11 +112,11 @@ class InfixToPostfixConverter:
 
                 self.operator_stack.push(token)
 
-            # 3. Se for parêntese de abertura '(', empilha
+            # 4. Se for parêntese de abertura '(', empilha
             elif token.type == TokenType.LPAREN:
                 self.operator_stack.push(token)
 
-            # 4. Se for parêntese de fechamento ')'
+            # 5. Se for parêntese de fechamento ')'
             elif token.type == TokenType.RPAREN:
                 matched_lparen = False
                 while not self.operator_stack.is_empty():
@@ -126,6 +130,10 @@ class InfixToPostfixConverter:
                     raise MismatchedParenthesesError(
                         f"Parênteses desbalanceados: ')' sem correspondente na posição {token.position + 1}."
                     )
+
+                # Se o topo da pilha agora for uma função, desempilha para a saída
+                if not self.operator_stack.is_empty() and self.operator_stack.peek().type == TokenType.FUNCTION:
+                    self.output_queue.enqueue(self.operator_stack.pop())
 
         # 5. Esvazia o restante da pilha de operadores para a fila de saída
         while not self.operator_stack.is_empty():

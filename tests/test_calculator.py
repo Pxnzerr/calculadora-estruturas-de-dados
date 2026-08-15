@@ -2,6 +2,9 @@
 Suíte de Testes Unitários para a Calculadora de Estruturas de Dados e Algoritmos.
 """
 
+import math
+import os
+import tempfile
 import unittest
 from calculadora.stack import Stack
 from calculadora.queue_ds import Queue
@@ -127,6 +130,69 @@ class TestTokenizer(unittest.TestCase):
         with self.assertRaises(TokenizerError):
             Tokenizer("   ").tokenize()
 
+    # ===== NOVOS TESTES: Funções Matemáticas =====
+
+    def test_function_tokens(self):
+        """Funções devem ser tokenizadas como TokenType.FUNCTION."""
+        tok = Tokenizer("sin(3.14)").tokenize()
+        types = [t.type for t in tok]
+        self.assertIn(TokenType.FUNCTION, types)
+        self.assertEqual(tok[0].value, "sin")
+
+    def test_function_sqrt(self):
+        tok = Tokenizer("sqrt(16)").tokenize()
+        values = [t.value for t in tok]
+        self.assertEqual(values, ["sqrt", "(", "16", ")"])
+
+    def test_function_case_insensitive(self):
+        """Funções devem ser case-insensitive."""
+        tok = Tokenizer("SIN(1) + COS(2)").tokenize()
+        func_values = [t.value for t in tok if t.type == TokenType.FUNCTION]
+        self.assertEqual(func_values, ["sin", "cos"])
+
+    def test_function_without_parenthesis_raises(self):
+        """Função seguida de algo que não é '(' deve dar erro."""
+        with self.assertRaises(TokenizerError):
+            Tokenizer("sin 3").tokenize()
+
+    def test_unknown_identifier_raises(self):
+        """Identificador desconhecido deve dar erro."""
+        with self.assertRaises(TokenizerError):
+            Tokenizer("foo(3)").tokenize()
+
+    # ===== NOVOS TESTES: Constantes =====
+
+    def test_constant_pi(self):
+        """'pi' deve ser tokenizado como NUMBER com o valor de math.pi."""
+        tok = Tokenizer("pi + 1").tokenize()
+        self.assertEqual(tok[0].type, TokenType.NUMBER)
+        self.assertAlmostEqual(float(tok[0].value), math.pi)
+
+    def test_constant_e(self):
+        """'e' deve ser tokenizado como NUMBER com o valor de math.e."""
+        tok = Tokenizer("e * 2").tokenize()
+        self.assertEqual(tok[0].type, TokenType.NUMBER)
+        self.assertAlmostEqual(float(tok[0].value), math.e)
+
+    def test_constant_case_insensitive(self):
+        """Constantes devem ser case-insensitive."""
+        tok = Tokenizer("PI + E").tokenize()
+        self.assertAlmostEqual(float(tok[0].value), math.pi)
+        self.assertAlmostEqual(float(tok[2].value), math.e)
+
+    # ===== NOVOS TESTES: Variável 'ans' =====
+
+    def test_ans_with_value(self):
+        """'ans' deve ser expandido para o último resultado."""
+        tok = Tokenizer("ans + 1", ans_value=42.0).tokenize()
+        self.assertEqual(tok[0].type, TokenType.NUMBER)
+        self.assertEqual(float(tok[0].value), 42.0)
+
+    def test_ans_without_value_raises(self):
+        """'ans' sem valor anterior deve dar erro."""
+        with self.assertRaises(TokenizerError):
+            Tokenizer("ans + 1").tokenize()
+
 
 class TestShuntingYardConverter(unittest.TestCase):
     """Testes para a conversão Infixa -> Pós-Fixa (RPN)."""
@@ -161,6 +227,28 @@ class TestShuntingYardConverter(unittest.TestCase):
     def test_unbalanced_parentheses_close(self):
         with self.assertRaises(MismatchedParenthesesError):
             self._convert_str("2 + 3) * 4")
+
+    # ===== NOVOS TESTES: Funções no Shunting Yard =====
+
+    def test_function_in_rpn(self):
+        """Função deve aparecer após seu argumento na RPN."""
+        rpn = self._convert_str("sqrt(16)")
+        self.assertEqual(rpn, "16 sqrt")
+
+    def test_function_with_expression_arg(self):
+        """Função com expressão complexa como argumento."""
+        rpn = self._convert_str("sqrt(9 + 16)")
+        self.assertEqual(rpn, "9 16 + sqrt")
+
+    def test_function_combined_with_operators(self):
+        """Função combinada com operadores."""
+        rpn = self._convert_str("sin(1) + cos(2)")
+        self.assertEqual(rpn, "1 sin 2 cos +")
+
+    def test_nested_functions(self):
+        """Funções aninhadas."""
+        rpn = self._convert_str("sqrt(abs(-16))")
+        self.assertEqual(rpn, "-16 abs sqrt")
 
 
 class TestCalculatorEngine(unittest.TestCase):
@@ -235,6 +323,191 @@ class TestCalculatorEngine(unittest.TestCase):
         self.assertEqual(hist[0].expression, "2 + 2")
         engine.clear_history()
         self.assertEqual(len(engine.get_history()), 0)
+
+    # ===== NOVOS TESTES: Funções Matemáticas (Ponta a Ponta) =====
+
+    def test_sqrt(self):
+        res = self.engine.calculate("sqrt(16)")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 4)
+
+    def test_sqrt_with_expression(self):
+        res = self.engine.calculate("sqrt(9 + 16)")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 5)
+
+    def test_sin_zero(self):
+        res = self.engine.calculate("sin(0)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 0.0, places=10)
+
+    def test_sin_pi_half(self):
+        res = self.engine.calculate("sin(pi / 2)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 1.0, places=10)
+
+    def test_cos_zero(self):
+        res = self.engine.calculate("cos(0)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 1.0, places=10)
+
+    def test_cos_pi(self):
+        res = self.engine.calculate("cos(pi)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, -1.0, places=10)
+
+    def test_tan_zero(self):
+        res = self.engine.calculate("tan(0)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 0.0, places=10)
+
+    def test_log_100(self):
+        """log é logaritmo base 10."""
+        res = self.engine.calculate("log(100)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 2.0, places=10)
+
+    def test_ln_e(self):
+        """ln é logaritmo natural (base e)."""
+        res = self.engine.calculate("ln(e)")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 1.0, places=10)
+
+    def test_abs_negative(self):
+        res = self.engine.calculate("abs(-42)")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 42)
+
+    def test_ceil_decimal(self):
+        res = self.engine.calculate("ceil(3.2)")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 4)
+
+    def test_floor_decimal(self):
+        res = self.engine.calculate("floor(3.9)")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 3)
+
+    def test_nested_functions(self):
+        """Funções aninhadas: sqrt(abs(-25))"""
+        res = self.engine.calculate("sqrt(abs(-25))")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 5)
+
+    def test_function_combined_with_arithmetic(self):
+        """Funções combinadas com aritmética."""
+        res = self.engine.calculate("sqrt(16) + sqrt(9)")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 7)
+
+    # ===== NOVOS TESTES: Erros de Domínio =====
+
+    def test_sqrt_negative_error(self):
+        res = self.engine.calculate("sqrt(-4)")
+        self.assertIsNotNone(res.error)
+        self.assertIn("negativo", res.error.lower())
+
+    def test_log_zero_error(self):
+        res = self.engine.calculate("log(0)")
+        self.assertIsNotNone(res.error)
+
+    def test_log_negative_error(self):
+        res = self.engine.calculate("log(-1)")
+        self.assertIsNotNone(res.error)
+
+    def test_ln_zero_error(self):
+        res = self.engine.calculate("ln(0)")
+        self.assertIsNotNone(res.error)
+
+    # ===== NOVOS TESTES: Constantes =====
+
+    def test_pi_value(self):
+        res = self.engine.calculate("pi")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, math.pi)
+
+    def test_e_value(self):
+        res = self.engine.calculate("e")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, math.e)
+
+    def test_pi_arithmetic(self):
+        res = self.engine.calculate("2 * pi")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 2 * math.pi)
+
+    # ===== NOVOS TESTES: Variável 'ans' =====
+
+    def test_ans_basic(self):
+        """'ans' deve retornar o último resultado."""
+        self.engine.calculate("10 + 5")  # ans = 15
+        res = self.engine.calculate("ans * 2")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 30)
+
+    def test_ans_chain(self):
+        """Encadear cálculos com 'ans'."""
+        self.engine.calculate("100")  # ans = 100
+        self.engine.calculate("ans / 2")  # ans = 50
+        res = self.engine.calculate("ans + 25")
+        self.assertIsNone(res.error)
+        self.assertEqual(res.result, 75)
+
+    def test_ans_no_previous_error(self):
+        """'ans' sem cálculo anterior deve dar erro."""
+        engine = CalculatorEngine()
+        res = engine.calculate("ans + 1")
+        self.assertIsNotNone(res.error)
+        self.assertIn("ans", res.error.lower())
+
+    # ===== NOVOS TESTES: Exportação de Histórico =====
+
+    def test_export_history(self):
+        """Exportar histórico deve criar um arquivo válido."""
+        self.engine.calculate("2 + 3")
+        self.engine.calculate("sqrt(16)")
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            temp_path = f.name
+
+        try:
+            result_path = self.engine.export_history(temp_path)
+            self.assertTrue(os.path.exists(result_path))
+
+            with open(result_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            self.assertIn("2 + 3", content)
+            self.assertIn("sqrt(16)", content)
+            self.assertIn("HISTORICO", content)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    def test_export_empty_history(self):
+        """Exportar histórico vazio deve funcionar sem erro."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            temp_path = f.name
+
+        try:
+            result_path = self.engine.export_history(temp_path)
+            self.assertTrue(os.path.exists(result_path))
+
+            with open(result_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            self.assertIn("vazio", content.lower())
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    # ===== NOVO TESTE: last_result property =====
+
+    def test_last_result_property(self):
+        """last_result deve rastrear o último resultado com sucesso."""
+        self.assertIsNone(self.engine.last_result)
+        self.engine.calculate("7 * 6")
+        self.assertEqual(self.engine.last_result, 42)
 
 
 if __name__ == "__main__":

@@ -21,10 +21,13 @@ class CLIInterface:
    Pilha (Stack) | Fila (Queue) | Shunting Yard | Avaliação RPN | O(n)
 ========================================================================
  Operadores suportados: +  -  *  /  ^ (potência)  % (módulo)  ( )
+ Funções: sin  cos  tan  sqrt  log  ln  abs  ceil  floor
+ Constantes: pi, e     |  Variável especial: ans (último resultado)
  Comandos especiais:
    :h, :help      -> Exibe ajuda e exemplos
    :hist, :history-> Exibe as últimas operações
    :c, :clear     -> Limpa o histórico
+   :export        -> Exporta histórico para arquivo
    :q, :exit      -> Sair do programa
 ------------------------------------------------------------------------
 """
@@ -59,6 +62,9 @@ class CLIInterface:
             elif cmd in (':c', ':clear', 'clear', 'limpar'):
                 self.engine.clear_history()
                 print(">> Histórico limpo com sucesso!")
+                continue
+            elif cmd.startswith(':export'):
+                self._export_history(user_input)
                 continue
 
             # Processar cálculo
@@ -99,24 +105,57 @@ class CLIInterface:
     def _show_help(self) -> None:
         """Exibe a documentação de ajuda e exemplos práticos."""
         help_text = """
-=== GUIA RÁPIDO E EXEMPLOS ===
-Precedência de Operadores:
-  1. Parênteses: ( ... )
-  2. Potência:   ^  (Associatividade à Direita: 2 ^ 3 ^ 2 = 2 ^ 9 = 512)
-  3. Mult/Div/Mod: *, /, % (Associatividade à Esquerda)
-  4. Soma/Sub:   +, - (Associatividade à Esquerda)
+=== GUIA RAPIDO E EXEMPLOS ===
+Precedencia de Operadores:
+  1. Parenteses: ( ... )
+  2. Potencia:   ^  (Associatividade a Direita: 2 ^ 3 ^ 2 = 2 ^ 9 = 512)
+  3. Mult/Div/Mod: *, /, % (Associatividade a Esquerda)
+  4. Soma/Sub:   +, - (Associatividade a Esquerda)
 
-Exemplos válidos:
+Funcoes Matematicas:
+  sin(x)   - Seno (em radianos)
+  cos(x)   - Cosseno (em radianos)
+  tan(x)   - Tangente (em radianos)
+  sqrt(x)  - Raiz quadrada
+  log(x)   - Logaritmo base 10
+  ln(x)    - Logaritmo natural (base e)
+  abs(x)   - Valor absoluto
+  ceil(x)  - Arredondamento para cima
+  floor(x) - Arredondamento para baixo
+
+Constantes:
+  pi  -> 3.141592653589793
+  e   -> 2.718281828459045
+
+Variavel Especial:
+  ans -> Ultimo resultado calculado
+
+Exemplos validos:
   - 2 + 3 * 4              -> 14
   - (10 - 5) / 2           -> 2.5
+  - sqrt(16) + 1           -> 5
+  - sin(pi / 2)            -> 1.0
+  - ln(e)                  -> 1.0
+  - log(100)               -> 2.0
   - 2 ^ 3 + 1              -> 9
-  - 100 % 7                -> 2
-  - ((2 + 3) * 4) - 1      -> 19
-  - -5 + 3                 -> -2
-  - 3.5 * 2 + 0.5          -> 7.5
+  - ans * 2                -> (dobro do ultimo resultado)
 ==============================
 """
         print(help_text)
+
+    def _export_history(self, cmd_str: str) -> None:
+        """Exporta o historico para arquivo. Uso: :export [caminho]"""
+        parts = cmd_str.strip().split(maxsplit=1)
+        if len(parts) > 1:
+            filepath = parts[1]
+        else:
+            filepath = "historico_calculadora.txt"
+
+        try:
+            abs_path = self.engine.export_history(filepath)
+            print(f">> Historico exportado com sucesso para: {abs_path}")
+        except Exception as ex:
+            print(f"[X] Erro ao exportar historico: {ex}")
 
 
 def run_gui():
@@ -313,6 +352,19 @@ def run_gui():
             )
             btn_clear_hist.pack(side="right")
 
+            btn_export_hist = tk.Button(
+                hist_header,
+                text="Exportar",
+                font=("Helvetica", 9),
+                bg="#45475a",
+                fg=self.text_color,
+                relief="flat",
+                padx=8,
+                cursor="hand2",
+                command=self._on_export_history
+            )
+            btn_export_hist.pack(side="right", padx=(0, 5))
+
             self.history_listbox = tk.Listbox(
                 history_card,
                 font=("Consolas", 10),
@@ -374,6 +426,22 @@ def run_gui():
         def _on_clear_history(self):
             self.engine.clear_history()
             self._update_history_list()
+
+        def _on_export_history(self):
+            """Exporta o historico via dialogo de salvar arquivo."""
+            from tkinter import filedialog
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".txt",
+                filetypes=[("Arquivo de Texto", "*.txt"), ("Todos", "*.*")],
+                initialfile="historico_calculadora.txt",
+                title="Exportar Historico"
+            )
+            if filepath:
+                try:
+                    abs_path = self.engine.export_history(filepath)
+                    messagebox.showinfo("Exportado", f"Historico salvo em:\n{abs_path}")
+                except Exception as ex:
+                    messagebox.showerror("Erro", f"Falha ao exportar:\n{ex}")
 
     root = tk.Tk()
     app = CalculatorGUI(root)

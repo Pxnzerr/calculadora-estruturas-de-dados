@@ -2,12 +2,15 @@
 Módulo de Tokenização (Lexer / Analisador Léxico e Sintático)
 
 Responsável por:
-1. Decompor a string de entrada em tokens atômicos (números, operadores, parênteses).
+1. Decompor a string de entrada em tokens atômicos (números, operadores, parênteses, funções).
 2. Tratar números inteiros e decimais (ponto flutuante, incluindo notação '.5' -> '0.5').
 3. Tratar operadores unários de sinal (+ e -) e números negativos.
-4. Validar sintaxe básica (caracteres inválidos, operadores consecutivos inválidos, etc.).
+4. Reconhecer funções matemáticas (sin, cos, sqrt, log, etc.) e constantes (pi, e).
+5. Suportar a variável especial 'ans' (último resultado calculado).
+6. Validar sintaxe básica (caracteres inválidos, operadores consecutivos inválidos, etc.).
 """
 
+import math
 from enum import Enum, auto
 from typing import List, Optional
 from dataclasses import dataclass
@@ -19,6 +22,7 @@ class TokenType(Enum):
     UNARY_MINUS = auto()  # Unário de negação: u-
     LPAREN = auto()       # (
     RPAREN = auto()       # )
+    FUNCTION = auto()     # sin, cos, sqrt, log, ln, tan, abs, ceil, floor
 
 
 @dataclass
@@ -52,10 +56,18 @@ class Tokenizer:
 
     OPERATORS = {'+', '-', '*', '/', '^', '%'}
 
-    def __init__(self, expression: str):
+    FUNCTIONS = {'sin', 'cos', 'tan', 'sqrt', 'log', 'ln', 'abs', 'ceil', 'floor'}
+
+    CONSTANTS = {
+        'pi': str(math.pi),
+        'e': str(math.e),
+    }
+
+    def __init__(self, expression: str, ans_value: Optional[float] = None):
         self.expression: str = expression
         self.cursor: int = 0
         self.length: int = len(expression)
+        self.ans_value: Optional[float] = ans_value
 
     def tokenize(self) -> List[Token]:
         """
@@ -86,7 +98,13 @@ class Tokenizer:
                 raw_tokens.append(token)
                 continue
 
-            # 3. Parênteses
+            # 3. Identificadores: funções (sin, cos...), constantes (pi, e) e ans
+            if char.isalpha() or char == '_':
+                token = self._read_identifier()
+                raw_tokens.append(token)
+                continue
+
+            # 4. Parênteses
             if char == '(':
                 raw_tokens.append(Token(TokenType.LPAREN, '(', self.cursor))
                 self.cursor += 1
@@ -96,13 +114,13 @@ class Tokenizer:
                 self.cursor += 1
                 continue
 
-            # 4. Operadores
+            # 5. Operadores
             if char in self.OPERATORS:
                 raw_tokens.append(Token(TokenType.OPERATOR, char, self.cursor))
                 self.cursor += 1
                 continue
 
-            # 5. Caractere desconhecido
+            # 6. Caractere desconhecido
             raise TokenizerError(f"Caractere inválido '{char}'", self.cursor)
 
         # Trata unários e valida a sequência
@@ -144,6 +162,42 @@ class Tokenizer:
             num_str = '0' + num_str
 
         return Token(TokenType.NUMBER, num_str, start_pos)
+
+    def _read_identifier(self) -> Token:
+        """
+        Lê um identificador alfabético (função, constante ou 'ans') a partir do cursor.
+        
+        Funções suportadas: sin, cos, tan, sqrt, log, ln, abs, ceil, floor
+        Constantes suportadas: pi, e
+        Variável especial: ans (último resultado)
+        """
+        start_pos = self.cursor
+        ident = ""
+        while self.cursor < self.length and (self.expression[self.cursor].isalnum() or self.expression[self.cursor] == '_'):
+            ident += self.expression[self.cursor]
+            self.cursor += 1
+
+        ident_lower = ident.lower()
+
+        # Funções matemáticas
+        if ident_lower in self.FUNCTIONS:
+            return Token(TokenType.FUNCTION, ident_lower, start_pos)
+
+        # Constantes matemáticas
+        if ident_lower in self.CONSTANTS:
+            return Token(TokenType.NUMBER, self.CONSTANTS[ident_lower], start_pos)
+
+        # Variável especial 'ans'
+        if ident_lower == 'ans':
+            if self.ans_value is not None:
+                return Token(TokenType.NUMBER, str(self.ans_value), start_pos)
+            else:
+                raise TokenizerError(
+                    "Variável 'ans' utilizada, mas nenhum resultado anterior disponível.",
+                    start_pos
+                )
+
+        raise TokenizerError(f"Identificador desconhecido '{ident}'", start_pos)
 
     def _handle_unary_operators(self, tokens: List[Token]) -> List[Token]:
         """
@@ -236,15 +290,22 @@ class Tokenizer:
                     curr_tok.position
                 )
 
-            # Número seguido diretamente de '(' sem operador (ex: '5(2)')
+            # Número seguido diretamente de '(' sem operador (ex: '5(2)') — mas permitir FUNCTION seguido de '('
             if curr_tok.type == TokenType.NUMBER and next_tok.type == TokenType.LPAREN:
                 raise TokenizerError(
                     "Falta de operador explícito entre número e parêntese.",
                     next_tok.position
                 )
 
-            # ')' seguido diretamente de número ou '(' (ex: '(2)3' ou '(2)(3)')
-            if curr_tok.type == TokenType.RPAREN and next_tok.type in (TokenType.NUMBER, TokenType.LPAREN):
+            # Função DEVE ser seguida de '('
+            if curr_tok.type == TokenType.FUNCTION and next_tok.type != TokenType.LPAREN:
+                raise TokenizerError(
+                    f"Função '{curr_tok.value}' deve ser seguida de '('.",
+                    curr_tok.position
+                )
+
+            # ')' seguido diretamente de número, '(' ou função (ex: '(2)3' ou '(2)(3)')
+            if curr_tok.type == TokenType.RPAREN and next_tok.type in (TokenType.NUMBER, TokenType.LPAREN, TokenType.FUNCTION):
                 raise TokenizerError(
                     "Falta de operador explícito após fechamento de parêntese.",
                     next_tok.position

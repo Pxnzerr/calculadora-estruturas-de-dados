@@ -15,6 +15,7 @@ Funcionamento:
 """
 
 from typing import Union
+import math
 from .stack import Stack
 from .queue_ds import Queue
 from .tokenizer import Token, TokenType
@@ -91,6 +92,15 @@ class PostfixEvaluator:
                 result = self._apply_operator(a, b, token.value, token.position)
                 self.operand_stack.push(result)
 
+            elif token.type == TokenType.FUNCTION:
+                if self.operand_stack.is_empty():
+                    raise EvaluationError(
+                        f"Sintaxe inválida: operando insuficiente para a função '{token.value}'."
+                    )
+                val = self.operand_stack.pop()
+                result = self._apply_function(token.value, val, token.position)
+                self.operand_stack.push(result)
+
             else:
                 raise EvaluationError(f"Token inesperado na avaliação pós-fixa: '{token.value}'")
 
@@ -133,6 +143,65 @@ class PostfixEvaluator:
                 raise EvaluationError(f"Operador desconhecido: '{op}'")
         except OverflowError:
             raise EvaluationError(f"Estouro numérico (Overflow) na operação '{a} {op} {b}'.")
+
+    def _apply_function(self, func_name: str, value: float, position: int) -> float:
+        """
+        Aplica uma função matemática ao valor fornecido.
+        
+        Funções suportadas: sin, cos, tan, sqrt, log (base 10), ln (natural), abs, ceil, floor.
+        
+        Args:
+            func_name: Nome da função.
+            value: Operando da função.
+            position: Posição original no texto para mensagens de erro.
+            
+        Returns:
+            Resultado da função aplicada.
+            
+        Raises:
+            EvaluationError: Se o argumento estiver fora do domínio da função.
+        """
+        try:
+            if func_name == 'sin':
+                return math.sin(value)
+            elif func_name == 'cos':
+                return math.cos(value)
+            elif func_name == 'tan':
+                # Verifica se está próximo de π/2 + kπ (tangente indefinida)
+                cos_val = math.cos(value)
+                if abs(cos_val) < 1e-15:
+                    raise EvaluationError(
+                        f"Tangente indefinida para o argumento {value} (próximo de π/2 + kπ)."
+                    )
+                return math.tan(value)
+            elif func_name == 'sqrt':
+                if value < 0:
+                    raise EvaluationError(
+                        f"Raiz quadrada de número negativo não é suportada: sqrt({value})."
+                    )
+                return math.sqrt(value)
+            elif func_name == 'log':
+                if value <= 0:
+                    raise EvaluationError(
+                        f"Logaritmo de número não-positivo não é definido: log({value})."
+                    )
+                return math.log10(value)
+            elif func_name == 'ln':
+                if value <= 0:
+                    raise EvaluationError(
+                        f"Logaritmo natural de número não-positivo não é definido: ln({value})."
+                    )
+                return math.log(value)
+            elif func_name == 'abs':
+                return abs(value)
+            elif func_name == 'ceil':
+                return math.ceil(value)
+            elif func_name == 'floor':
+                return math.floor(value)
+            else:
+                raise EvaluationError(f"Função desconhecida: '{func_name}'")
+        except OverflowError:
+            raise EvaluationError(f"Estouro numérico (Overflow) ao calcular {func_name}({value}).")
 
     @property
     def max_stack_depth(self) -> int:
