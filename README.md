@@ -185,3 +185,9 @@ A calculadora possui validação em múltiplas camadas:
 4. **Erros Aritméticos**: Divisão por zero (`x / 0`), módulo por zero (`x % 0`), base negativa com expoente fracionário e overflow numérico.
 5. **Erros de Domínio**: Raiz quadrada de negativo (`sqrt(-4)`), logaritmo de zero ou negativo (`log(0)`, `ln(-1)`), tangente indefinida.
 6. **Variável `ans` indisponível**: Uso de `ans` sem cálculo anterior.
+
+---
+
+## 👤 Autor
+
+Arthur Clark Francisco
