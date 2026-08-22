@@ -436,6 +436,24 @@ class TestCalculatorEngine(unittest.TestCase):
         self.assertIsNone(res.error)
         self.assertAlmostEqual(res.result, 2 * math.pi)
 
+    def test_trigonometric_identities(self):
+        """Testa identidade sen^2(x) + cos^2(x) = 1."""
+        res = self.engine.calculate("(sin(pi / 4)) ^ 2 + (cos(pi / 4)) ^ 2")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 1.0, places=7)
+
+    def test_exp_log_inverse(self):
+        """Testa a relação inversa exponencial e logaritmo e^(ln(x)) = x."""
+        res = self.engine.calculate("e ^ (ln(5))")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, 5.0, places=7)
+
+    def test_nested_unary_and_constants(self):
+        """Testa unário com constantes matemáticas."""
+        res = self.engine.calculate("-1 * pi")
+        self.assertIsNone(res.error)
+        self.assertAlmostEqual(res.result, -math.pi)
+
     # ===== NOVOS TESTES: Variável 'ans' =====
 
     def test_ans_basic(self):
