@@ -117,5 +117,14 @@ class Stack(Generic[T]):
     def __len__(self) -> int:
         return len(self._items)
 
+    def __bool__(self) -> bool:
+        return not self.is_empty()
+
+    def __contains__(self, item: T) -> bool:
+        return item in self._items
+
+    def __iter__(self):
+        return iter(self._items)
+
     def __repr__(self) -> str:
         return f"Stack({self._items})"

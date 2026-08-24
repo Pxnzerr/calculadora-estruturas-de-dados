@@ -53,6 +53,16 @@ class TestStack(unittest.TestCase):
         self.stack.push(6)
         self.assertEqual(self.stack.max_depth, 4)
 
+    def test_stack_iteration_and_membership(self):
+        self.assertFalse(bool(self.stack))
+        self.stack.push(10)
+        self.stack.push(20)
+        self.assertTrue(bool(self.stack))
+        self.assertIn(10, self.stack)
+        self.assertIn(20, self.stack)
+        self.assertNotIn(30, self.stack)
+        self.assertEqual(list(self.stack), [10, 20])
+
 
 class TestQueue(unittest.TestCase):
     """Testes para a estrutura de dados Fila (Queue)."""
@@ -79,6 +89,16 @@ class TestQueue(unittest.TestCase):
     def test_peek_empty_raises(self):
         with self.assertRaises(IndexError):
             self.queue.peek()
+
+    def test_queue_iteration_and_membership(self):
+        self.assertFalse(bool(self.queue))
+        self.queue.enqueue("x")
+        self.queue.enqueue("y")
+        self.assertTrue(bool(self.queue))
+        self.assertIn("x", self.queue)
+        self.assertIn("y", self.queue)
+        self.assertNotIn("z", self.queue)
+        self.assertEqual(list(self.queue), ["x", "y"])
 
 
 class TestTokenizer(unittest.TestCase):
