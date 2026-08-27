@@ -63,6 +63,29 @@ class TestStack(unittest.TestCase):
         self.assertNotIn(30, self.stack)
         self.assertEqual(list(self.stack), [10, 20])
 
+    def test_stack_equality(self):
+        s1 = Stack[int]()
+        s2 = Stack[int]()
+        self.assertEqual(s1, s2)
+        s1.push(1)
+        s1.push(2)
+        self.assertNotEqual(s1, s2)
+        s2.push(1)
+        s2.push(2)
+        self.assertEqual(s1, s2)
+        self.assertNotEqual(s1, [1, 2])
+
+    def test_stack_copy(self):
+        self.stack.push(100)
+        self.stack.push(200)
+        copy_stack = self.stack.copy()
+        self.assertEqual(self.stack, copy_stack)
+        self.assertEqual(copy_stack.max_depth, self.stack.max_depth)
+        copy_stack.push(300)
+        self.assertNotEqual(self.stack, copy_stack)
+        self.assertEqual(self.stack.size(), 2)
+        self.assertEqual(copy_stack.size(), 3)
+
 
 class TestQueue(unittest.TestCase):
     """Testes para a estrutura de dados Fila (Queue)."""
@@ -99,6 +122,29 @@ class TestQueue(unittest.TestCase):
         self.assertIn("y", self.queue)
         self.assertNotIn("z", self.queue)
         self.assertEqual(list(self.queue), ["x", "y"])
+
+    def test_queue_equality(self):
+        q1 = Queue[int]()
+        q2 = Queue[int]()
+        self.assertEqual(q1, q2)
+        q1.enqueue(1)
+        q1.enqueue(2)
+        self.assertNotEqual(q1, q2)
+        q2.enqueue(1)
+        q2.enqueue(2)
+        self.assertEqual(q1, q2)
+        self.assertNotEqual(q1, [1, 2])
+
+    def test_queue_copy(self):
+        self.queue.enqueue("first")
+        self.queue.enqueue("second")
+        copy_queue = self.queue.copy()
+        self.assertEqual(self.queue, copy_queue)
+        copy_queue.enqueue("third")
+        self.assertNotEqual(self.queue, copy_queue)
+        self.assertEqual(self.queue.size(), 2)
+        self.assertEqual(copy_queue.size(), 3)
+
 
 
 class TestTokenizer(unittest.TestCase):

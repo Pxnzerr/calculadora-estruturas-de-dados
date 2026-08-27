@@ -126,5 +126,23 @@ class Stack(Generic[T]):
     def __iter__(self):
         return iter(self._items)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Stack):
+            return False
+        return self._items == other._items
+
+    def copy(self) -> 'Stack[T]':
+        """
+        Retorna uma cópia da pilha com os mesmos elementos e profundidade máxima.
+        
+        Returns:
+            Nova instância de Stack contendo os mesmos itens.
+        """
+        new_stack = Stack[T]()
+        new_stack._items = list(self._items)
+        new_stack._max_depth = self._max_depth
+        return new_stack
+
     def __repr__(self) -> str:
         return f"Stack({self._items})"
+

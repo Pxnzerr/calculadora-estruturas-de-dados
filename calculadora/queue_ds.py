@@ -112,5 +112,22 @@ class Queue(Generic[T]):
     def __iter__(self):
         return iter(self._items)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Queue):
+            return False
+        return list(self._items) == list(other._items)
+
+    def copy(self) -> 'Queue[T]':
+        """
+        Retorna uma cópia da fila com os mesmos elementos.
+        
+        Returns:
+            Nova instância de Queue contendo os mesmos itens.
+        """
+        new_queue = Queue[T]()
+        new_queue._items = deque(self._items)
+        return new_queue
+
     def __repr__(self) -> str:
         return f"Queue({list(self._items)})"
+

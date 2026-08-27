@@ -58,7 +58,7 @@ Calc/
 │   └── main.py              # Ponto de entrada com seleção CLI/GUI/eval
 ├── tests/
 │   ├── __init__.py
-│   └── test_calculator.py   # Suíte de testes unitários abrangente (72 testes)
+│   └── test_calculator.py   # Suíte de testes unitários abrangente (81 testes)
 ├── main.py                  # Executável raiz
 └── README.md                # Documentação técnica e guia de uso
 ```
@@ -145,7 +145,7 @@ Funções podem ser **aninhadas**: `sqrt(abs(-25))` → `5`
 
 ## 🧪 Executando os Testes Unitários
 
-Para rodar a suíte completa de **72 testes** automatizados com `unittest`:
+Para rodar a suíte completa de **81 testes** automatizados com `unittest`:
 ```bash
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
