@@ -114,13 +114,55 @@ class CalculatorEngine:
         if len(self._history) > self.max_history:
             self._history.pop(0)
 
+    def calculate_batch(self, expressions: List[str]) -> List[CalculationResult]:
+        """
+        Processa uma lista de expressões sequencialmente mantendo o estado de 'ans'.
+        
+        Args:
+            expressions: Lista de strings contendo expressões infixas.
+            
+        Returns:
+            Lista com os CalculationResult de cada expressão calculada.
+        """
+        results: List[CalculationResult] = []
+        for expr in expressions:
+            results.append(self.calculate(expr))
+        return results
+
     def get_history(self) -> List[CalculationResult]:
         """Retorna cópia do histórico recente de operações."""
         return list(self._history)
 
-    def clear_history(self) -> None:
-        """Limpa o histórico de operações."""
+    def clear_history(self, reset_ans: bool = False) -> None:
+        """
+        Limpa o histórico de operações.
+        
+        Args:
+            reset_ans: Se True, também redefine o último resultado armazenado ('ans').
+        """
         self._history.clear()
+        if reset_ans:
+            self._last_result = None
+
+    def get_stats(self) -> dict:
+        """
+        Retorna métricas agregadas sobre as operações presentes no histórico atual.
+        
+        Returns:
+            Dicionário contendo estatísticas de execuções (total, sucessos, erros e taxa de sucesso).
+        """
+        total = len(self._history)
+        successful = sum(1 for item in self._history if item.error is None)
+        failed = total - successful
+        success_rate = (successful / total * 100.0) if total > 0 else 0.0
+
+        return {
+            "total_calculations": total,
+            "successful_calculations": successful,
+            "failed_calculations": failed,
+            "success_rate": round(success_rate, 2),
+            "last_result": self._last_result,
+        }
 
     @property
     def last_result(self) -> Optional[Union[int, float]]:
