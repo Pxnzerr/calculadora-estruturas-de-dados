@@ -111,9 +111,11 @@ A calculadora suporta funções matemáticas de uso comum. Todas recebem um argu
 | `cos(x)` | Cosseno (x em radianos) | `cos(0)` | `1.0` |
 | `tan(x)` | Tangente (x em radianos) | `tan(0)` | `0.0` |
 | `sqrt(x)` | Raiz quadrada | `sqrt(16)` | `4` |
+| `exp(x)` | Exponencial ($e^x$) | `exp(0)` | `1.0` |
 | `log(x)` | Logaritmo base 10 | `log(100)` | `2.0` |
 | `ln(x)` | Logaritmo natural (base *e*) | `ln(e)` | `1.0` |
 | `abs(x)` | Valor absoluto | `abs(-42)` | `42` |
+| `round(x)` | Arredondamento ao inteiro mais próximo | `round(3.7)` | `4` |
 | `ceil(x)` | Arredondamento para cima | `ceil(3.2)` | `4` |
 | `floor(x)` | Arredondamento para baixo | `floor(3.9)` | `3` |
 
@@ -127,6 +129,8 @@ Funções podem ser **aninhadas**: `sqrt(abs(-25))` → `5`
 | :--- | :--- | :--- |
 | `pi` | `3.141592653589793` | Constante π (pi) |
 | `e` | `2.718281828459045` | Constante de Euler |
+| `tau` | `6.283185307179586` | Constante τ ($2\pi$) |
+| `phi` | `1.618033988749895` | Proporção Áurea ($\phi$) |
 | `ans` | *(último resultado)* | Retorna o resultado do cálculo anterior |
 
 **Exemplos com constantes e `ans`:**

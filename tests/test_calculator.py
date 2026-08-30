@@ -585,13 +585,87 @@ class TestCalculatorEngine(unittest.TestCase):
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-    # ===== NOVO TESTE: last_result property =====
+    # ===== NOVOS TESTES: exp, round, tau, phi =====
 
-    def test_last_result_property(self):
-        """last_result deve rastrear o último resultado com sucesso."""
-        self.assertIsNone(self.engine.last_result)
-        self.engine.calculate("7 * 6")
+    def test_exp_function(self):
+        """Testa função exponencial exp(x)."""
+        res0 = self.engine.calculate("exp(0)")
+        self.assertIsNone(res0.error)
+        self.assertAlmostEqual(res0.result, 1.0)
+
+        res1 = self.engine.calculate("exp(1)")
+        self.assertIsNone(res1.error)
+        self.assertAlmostEqual(res1.result, math.e)
+
+        res_inv = self.engine.calculate("exp(ln(10))")
+        self.assertIsNone(res_inv.error)
+        self.assertAlmostEqual(res_inv.result, 10.0, places=7)
+
+    def test_round_function(self):
+        """Testa função de arredondamento round(x)."""
+        res1 = self.engine.calculate("round(3.2)")
+        self.assertIsNone(res1.error)
+        self.assertEqual(res1.result, 3)
+
+        res2 = self.engine.calculate("round(3.8)")
+        self.assertIsNone(res2.error)
+        self.assertEqual(res2.result, 4)
+
+    def test_tau_and_phi_constants(self):
+        """Testa as constantes matemáticas tau (2*pi) e phi (proporção áurea)."""
+        res_tau = self.engine.calculate("tau")
+        self.assertIsNone(res_tau.error)
+        self.assertAlmostEqual(res_tau.result, 2 * math.pi)
+
+        res_tau_half = self.engine.calculate("tau / 2")
+        self.assertIsNone(res_tau_half.error)
+        self.assertAlmostEqual(res_tau_half.result, math.pi)
+
+        res_phi = self.engine.calculate("phi")
+        self.assertIsNone(res_phi.error)
+        self.assertAlmostEqual(res_phi.result, 1.618033988749895, places=7)
+
+    # ===== NOVOS TESTES: calculate_batch, clear_history(reset_ans) e get_stats =====
+
+    def test_calculate_batch(self):
+        """Testa o processamento de expressões em lote com encadeamento de ans."""
+        expressions = ["10 + 20", "ans * 2", "sqrt(ans)"]
+        results = self.engine.calculate_batch(expressions)
+
+        self.assertEqual(len(results), 3)
+        self.assertEqual(results[0].result, 30)
+        self.assertEqual(results[1].result, 60)
+        self.assertAlmostEqual(results[2].result, math.sqrt(60), places=7)
+
+    def test_clear_history_reset_ans(self):
+        """Testa a limpeza do histórico com e sem redefinição de ans."""
+        self.engine.calculate("42")
         self.assertEqual(self.engine.last_result, 42)
+
+        self.engine.clear_history(reset_ans=False)
+        self.assertEqual(len(self.engine.get_history()), 0)
+        self.assertEqual(self.engine.last_result, 42)
+
+        self.engine.clear_history(reset_ans=True)
+        self.assertIsNone(self.engine.last_result)
+
+    def test_get_stats(self):
+        """Testa o cálculo das estatísticas de sessão do CalculatorEngine."""
+        self.engine.clear_history(reset_ans=True)
+        stats_empty = self.engine.get_stats()
+        self.assertEqual(stats_empty["total_calculations"], 0)
+        self.assertEqual(stats_empty["success_rate"], 0.0)
+
+        self.engine.calculate("10 + 5")
+        self.engine.calculate("20 * 2")
+        self.engine.calculate("10 / 0")
+
+        stats = self.engine.get_stats()
+        self.assertEqual(stats["total_calculations"], 3)
+        self.assertEqual(stats["successful_calculations"], 2)
+        self.assertEqual(stats["failed_calculations"], 1)
+        self.assertAlmostEqual(stats["success_rate"], 66.67, places=2)
+        self.assertEqual(stats["last_result"], 40)
 
 
 if __name__ == "__main__":
