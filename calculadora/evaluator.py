@@ -198,6 +198,10 @@ class PostfixEvaluator:
                 return math.ceil(value)
             elif func_name == 'floor':
                 return math.floor(value)
+            elif func_name == 'exp':
+                return math.exp(value)
+            elif func_name == 'round':
+                return float(round(value))
             else:
                 raise EvaluationError(f"Função desconhecida: '{func_name}'")
         except OverflowError:

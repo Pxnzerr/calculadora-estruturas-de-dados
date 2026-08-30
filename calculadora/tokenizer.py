@@ -56,11 +56,13 @@ class Tokenizer:
 
     OPERATORS = {'+', '-', '*', '/', '^', '%'}
 
-    FUNCTIONS = {'sin', 'cos', 'tan', 'sqrt', 'log', 'ln', 'abs', 'ceil', 'floor'}
+    FUNCTIONS = {'sin', 'cos', 'tan', 'sqrt', 'log', 'ln', 'abs', 'ceil', 'floor', 'exp', 'round'}
 
     CONSTANTS = {
         'pi': str(math.pi),
         'e': str(math.e),
+        'tau': str(getattr(math, 'tau', 2 * math.pi)),
+        'phi': '1.618033988749895',
     }
 
     def __init__(self, expression: str, ans_value: Optional[float] = None):
