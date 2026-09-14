@@ -59,13 +59,11 @@ class PostfixEvaluator:
         """
         self.operand_stack.clear()
 
-        # Copia os tokens para não consumir a fila original se for reutilizada
-        tokens = postfix_queue.to_list()
 
-        if not tokens:
+        if postfix_queue.is_empty():
             raise EvaluationError("Fila de avaliação vazia.")
 
-        for token in tokens:
+        for token in postfix_queue:
             if token.type == TokenType.NUMBER:
                 try:
                     val = float(token.value)
