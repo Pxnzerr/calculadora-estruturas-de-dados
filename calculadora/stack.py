@@ -41,8 +41,9 @@ class Stack(Generic[T]):
             item: Elemento a ser empilhado.
         """
         self._items.append(item)
-        if len(self._items) > self._max_depth:
-            self._max_depth = len(self._items)
+        depth = len(self._items)
+        if depth > self._max_depth:
+            self._max_depth = depth
 
     def pop(self) -> T:
         """
