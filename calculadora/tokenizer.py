@@ -140,22 +140,20 @@ class Tokenizer:
         """Lê um número inteiro ou decimal completo a partir do cursor atual."""
         start_pos = self.cursor
         has_dot = False
-        num_str = ""
 
         while self.cursor < self.length:
             char = self.expression[self.cursor]
             if char.isdigit():
-                num_str += char
                 self.cursor += 1
             elif char == '.':
                 if has_dot:
                     raise TokenizerError("Número decimal com múltiplos pontos flutuantes.", self.cursor)
                 has_dot = True
-                num_str += char
                 self.cursor += 1
             else:
                 break
 
+        num_str = self.expression[start_pos:self.cursor]
         if num_str == ".":
             raise TokenizerError("Ponto decimal isolado sem dígitos.", start_pos)
 
@@ -174,11 +172,10 @@ class Tokenizer:
         Variável especial: ans (último resultado)
         """
         start_pos = self.cursor
-        ident = ""
         while self.cursor < self.length and (self.expression[self.cursor].isalnum() or self.expression[self.cursor] == '_'):
-            ident += self.expression[self.cursor]
             self.cursor += 1
 
+        ident = self.expression[start_pos:self.cursor]
         ident_lower = ident.lower()
 
         # Funções matemáticas
